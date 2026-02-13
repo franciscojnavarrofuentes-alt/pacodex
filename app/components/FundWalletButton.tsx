@@ -20,9 +20,15 @@ export const FundWalletButton = () => {
         return;
       }
 
-      // Call the fund method to open MoonPay
+      // Get current chain ID from the wallet
+      const chainId = (embeddedWallet as any).chainId;
+
+      // Call the fund method with configuration for USDC
       if (typeof (embeddedWallet as any).fund === 'function') {
-        await (embeddedWallet as any).fund();
+        await (embeddedWallet as any).fund({
+          chain: chainId ? { id: chainId } : undefined,
+          asset: 'USDC', // Default to USDC instead of ETH
+        });
       } else {
         console.error('Fund method not available on wallet');
         alert('Funding not available for this wallet');
