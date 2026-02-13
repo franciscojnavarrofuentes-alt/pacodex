@@ -29,6 +29,7 @@ import {
 } from "./runtime-config";
 import { Link } from "react-router-dom";
 import CustomLeftNav from "@/components/CustomLeftNav";
+import { FundWalletButton } from "@/components/FundWalletButton";
 
 interface MainNavItem {
   name: string;
@@ -334,6 +335,7 @@ export const useOrderlyConfig = () => {
 
           <Flex itemAlign={"center"} className="oui-gap-2">
             {components.accountSummary}
+            <FundWalletButton />
             {components.linkDevice}
             {components.scanQRCode}
             {components.languageSwitcher}
