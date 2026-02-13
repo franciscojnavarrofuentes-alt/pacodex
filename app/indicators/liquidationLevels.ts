@@ -54,8 +54,10 @@ export const LiquidationLevelsIndicator = {
   },
 
   constructor: function () {
+    console.log('🚀 Liquidation Levels Indicator CONSTRUCTOR called');
     return {
       main: function (context: any) {
+        console.log('📊 Liquidation Levels Indicator MAIN called', context);
         // Get current close price from the last bar
         const close = context.symbol.close || 0;
 
@@ -67,6 +69,7 @@ export const LiquidationLevelsIndicator = {
         const longLiq = close * 0.895; // close * (1 - 1/10 - 0.005)
         const shortLiq = close * 1.105; // close * (1 + 1/10 + 0.005)
 
+        console.log('📊 Returning levels - Long:', longLiq, 'Short:', shortLiq);
         return [longLiq, shortLiq];
       },
     };
