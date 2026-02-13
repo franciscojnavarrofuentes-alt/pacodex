@@ -1,15 +1,22 @@
 // Liquidation Levels Custom Indicator for TradingView
 // Simple version with 10x leverage
 
-export const LiquidationLevelsIndicator = {
+export const LiquidationLevelsIndicator: any = {
   name: 'Liquidation Levels',
   metainfo: {
-    _metainfoVersion: 53,
-    id: 'liquidation-levels@pacodex-1',
+    _metainfoVersion: 51,
+    id: 'LiquidationLevels@tv-basicstudies-1',
+    name: 'Liquidation Levels',
     description: 'Liquidation Levels',
     shortDescription: 'Liq Levels',
+
     is_price_study: true,
     isCustomIndicator: true,
+
+    format: {
+      type: 'price',
+      precision: 2,
+    },
 
     plots: [
       { id: 'long_liq', type: 'line' },
@@ -19,7 +26,7 @@ export const LiquidationLevelsIndicator = {
     defaults: {
       styles: {
         long_liq: {
-          linestyle: 2,
+          linestyle: 0,
           linewidth: 2,
           plottype: 2,
           trackPrice: false,
@@ -27,7 +34,7 @@ export const LiquidationLevelsIndicator = {
           color: '#FF4444',
         },
         short_liq: {
-          linestyle: 2,
+          linestyle: 0,
           linewidth: 2,
           plottype: 2,
           trackPrice: false,
@@ -55,14 +62,34 @@ export const LiquidationLevelsIndicator = {
 
   constructor: function () {
     console.log('🚀 Liquidation Levels Indicator CONSTRUCTOR called');
-    return {
-      main: function (context: any) {
-        console.log('📊 Liquidation Levels Indicator MAIN called', context);
-        // Get current close price from the last bar
-        const close = context.symbol.close || 0;
 
-        if (close === 0) {
-          return [null, null];
+    (this as any).init = function(context: any, inputCallback: any) {
+      console.log('📊 INIT called with context:', context);
+      (this as any)._context = context;
+      (this as any)._input = inputCallback;
+    };
+
+    (this as any).main = function (context: any, inputCallback: any) {
+      console.log('📊 Liquidation Levels Indicator MAIN called');
+      console.log('📊 Context:', context);
+      console.log('📊 Input callback:', inputCallback);
+
+      // Access PineJS from the global scope
+      const PineJS = (window as any).PineJS;
+
+      if (!PineJS || !PineJS.Std) {
+        console.error('❌ PineJS not available');
+        return [NaN, NaN];
+      }
+
+      try {
+        // Use PineJS.Std.close to get the current close price
+        const close = PineJS.Std.close(context);
+        console.log('📊 Close price from PineJS:', close);
+
+        if (!close || close === 0 || isNaN(close)) {
+          console.log('📊 Invalid close price, returning NaN');
+          return [NaN, NaN];
         }
 
         // Calculate liquidation levels for 10x leverage
@@ -71,7 +98,10 @@ export const LiquidationLevelsIndicator = {
 
         console.log('📊 Returning levels - Long:', longLiq, 'Short:', shortLiq);
         return [longLiq, shortLiq];
-      },
+      } catch (error) {
+        console.error('❌ Error in main function:', error);
+        return [NaN, NaN];
+      }
     };
   },
 };
