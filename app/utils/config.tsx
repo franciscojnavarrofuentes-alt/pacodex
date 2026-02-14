@@ -400,7 +400,7 @@ export const useOrderlyConfig = () => {
           library_path: withBasePath("/tradingview/charting_library/"),
           customCssUrl: withBasePath("/tradingview/chart.css"),
           colorConfig: getColorConfig(),
-          customIndicatorsGetter: () => [LiquidationLevelsIndicator],
+          customIndicatorsGetter: () => Promise.resolve([LiquidationLevelsIndicator]),
         },
         sharePnLConfig: {
           backgroundImages: getPnLBackgroundImages(),
