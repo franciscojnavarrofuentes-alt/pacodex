@@ -64,48 +64,38 @@ export const LiquidationLevelsIndicator: any = {
     (this as any).init = function(context: any, inputCallback: any) {
       (this as any)._context = context;
       (this as any)._input = inputCallback;
+      (this as any)._close = context.new_var(context.symbol.close);
     };
 
     (this as any).main = function (context: any, inputCallback: any) {
-      // Access the context's symbol method
-      // The context.symbol() function returns the current symbol data
-      const symbolInfo = context.symbol();
+      // Get the current close price from the initialized variable
+      // This is the standard Pine Script way to access bar data
+      const close = (this as any)._close;
 
-      // Get close price from PineJS standard library
-      // We need to get it from the context using the new keyword
-      const PineJS = context.new_sym ? context.new_sym(context.symbol.ticker, context.symbol.period) : null;
+      // If close is not available, try to get it from PineJS standard library
+      let closePrice = 2000; // Default fallback
 
-      // Try multiple ways to get the current price
-      let close = 2000; // Default fallback
-
-      // Method 1: Try to get from symbol info
-      if (symbolInfo && symbolInfo.ticker) {
-        const priceStr = String(symbolInfo.ticker).match(/[\d.]+/);
-        if (priceStr) {
-          close = parseFloat(priceStr[0]);
-        }
-      }
-
-      // Method 2: Try to access from context close values
-      if (!close || close === 2000) {
-        if ((this as any)._context && (this as any)._context.symbol) {
-          const sym = (this as any)._context.symbol;
-          if (typeof sym === 'function') {
-            const symData = sym();
-            if (symData && symData.ticker) {
-              close = symData.ticker.close || symData.ticker.last || close;
-            }
-          } else if (sym && sym.ticker) {
-            close = sym.ticker.close || sym.ticker.last || close;
+      try {
+        // Try to get the value
+        if (close !== undefined && close !== null) {
+          if (typeof close === 'number') {
+            closePrice = close;
+          } else if (typeof close.get === 'function') {
+            closePrice = close.get();
+          } else if (close.value !== undefined) {
+            closePrice = close.value;
           }
         }
+      } catch (e) {
+        // Fallback to default
+        console.warn('Could not get close price:', e);
       }
 
       // Calculate liquidation levels for 10x leverage
       // Long liquidation: -10.5% (10% leverage + 0.5% fee)
       // Short liquidation: +10.5% (10% leverage + 0.5% fee)
-      const longLiq = close * 0.895;  // -10.5%
-      const shortLiq = close * 1.105; // +10.5%
+      const longLiq = closePrice * 0.895;  // -10.5%
+      const shortLiq = closePrice * 1.105; // +10.5%
 
       return [longLiq, shortLiq];
     };
