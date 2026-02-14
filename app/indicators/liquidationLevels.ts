@@ -7,7 +7,7 @@ export const LiquidationLevelsIndicator: any = {
     _metainfoVersion: 51,
     id: 'LiquidationLevels@tv-basicstudies-1',
     name: 'Liquidation Levels',
-    description: 'Liquidation Levels',
+    description: 'Shows liquidation levels for 10x leverage positions',
     shortDescription: 'Liq Levels',
 
     is_price_study: true,
@@ -61,47 +61,30 @@ export const LiquidationLevelsIndicator: any = {
   },
 
   constructor: function () {
-    console.log('🚀 Liquidation Levels Indicator CONSTRUCTOR called');
+    (this as any).main = function (context: any, inputCallback: any) {
+      // The context parameter contains the PineJS instance
+      // We need to access it from the symbol parameter
+      const { symbol } = context;
 
-    (this as any).init = function(context: any, inputCallback: any) {
-      console.log('📊 INIT called with context:', context);
-      (this as any)._context = context;
-      (this as any)._input = inputCallback;
+      // Get the close price from the symbol's data
+      // For custom indicators, we use the close price from the current bar
+      const close = (this as any)._context?.symbol()?.ticker?.close ||
+                    symbol?.ticker?.close ||
+                    context?.close?.(context) ||
+                    2000; // Fallback to a default value if we can't get the price
+
+      // Calculate liquidation levels for 10x leverage
+      // Long liquidation: price drops 9.5% (10% for leverage + 0.5% fee buffer)
+      // Short liquidation: price rises 10.5% (10% for leverage + 0.5% fee buffer)
+      const longLiq = close * 0.895;  // -10.5%
+      const shortLiq = close * 1.105; // +10.5%
+
+      return [longLiq, shortLiq];
     };
 
-    (this as any).main = function (context: any, inputCallback: any) {
-      console.log('📊 Liquidation Levels Indicator MAIN called');
-      console.log('📊 Context:', context);
-      console.log('📊 Input callback:', inputCallback);
-
-      // Access PineJS from the global scope
-      const PineJS = (window as any).PineJS;
-
-      if (!PineJS || !PineJS.Std) {
-        console.error('❌ PineJS not available');
-        return [NaN, NaN];
-      }
-
-      try {
-        // Use PineJS.Std.close to get the current close price
-        const close = PineJS.Std.close(context);
-        console.log('📊 Close price from PineJS:', close);
-
-        if (!close || close === 0 || isNaN(close)) {
-          console.log('📊 Invalid close price, returning NaN');
-          return [NaN, NaN];
-        }
-
-        // Calculate liquidation levels for 10x leverage
-        const longLiq = close * 0.895; // close * (1 - 1/10 - 0.005)
-        const shortLiq = close * 1.105; // close * (1 + 1/10 + 0.005)
-
-        console.log('📊 Returning levels - Long:', longLiq, 'Short:', shortLiq);
-        return [longLiq, shortLiq];
-      } catch (error) {
-        console.error('❌ Error in main function:', error);
-        return [NaN, NaN];
-      }
+    (this as any).init = function(context: any, inputCallback: any) {
+      (this as any)._context = context;
+      (this as any)._input = inputCallback;
     };
   },
 };
