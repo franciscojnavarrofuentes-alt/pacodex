@@ -1,7 +1,7 @@
 // Liquidation Levels Custom Indicator for TradingView
 // Shows 10x leverage liquidation levels
 
-export const LiquidationLevelsIndicator: any = {
+export const createLiquidationLevelsIndicator = (PineJS: any): any => ({
   name: 'Liquidation Levels',
   metainfo: {
     _metainfoVersion: 51,
@@ -64,32 +64,14 @@ export const LiquidationLevelsIndicator: any = {
     (this as any).init = function(context: any, inputCallback: any) {
       (this as any)._context = context;
       (this as any)._input = inputCallback;
-      (this as any)._close = context.new_var(context.symbol.close);
     };
 
     (this as any).main = function (context: any, inputCallback: any) {
-      // Get the current close price from the initialized variable
-      // This is the standard Pine Script way to access bar data
-      const close = (this as any)._close;
+      (this as any)._context = context;
+      (this as any)._input = inputCallback;
 
-      // If close is not available, try to get it from PineJS standard library
-      let closePrice = 2000; // Default fallback
-
-      try {
-        // Try to get the value
-        if (close !== undefined && close !== null) {
-          if (typeof close === 'number') {
-            closePrice = close;
-          } else if (typeof close.get === 'function') {
-            closePrice = close.get();
-          } else if (close.value !== undefined) {
-            closePrice = close.value;
-          }
-        }
-      } catch (e) {
-        // Fallback to default
-        console.warn('Could not get close price:', e);
-      }
+      // Get close price using PineJS standard library
+      const closePrice = PineJS.Std.close((this as any)._context);
 
       // Calculate liquidation levels for 10x leverage
       // Long liquidation: -10.5% (10% leverage + 0.5% fee)
@@ -100,6 +82,6 @@ export const LiquidationLevelsIndicator: any = {
       return [longLiq, shortLiq];
     };
   },
-};
+});
 
-export default LiquidationLevelsIndicator;
+export default createLiquidationLevelsIndicator;

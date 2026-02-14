@@ -30,7 +30,7 @@ import {
 import { Link } from "react-router-dom";
 import CustomLeftNav from "@/components/CustomLeftNav";
 import { FundWalletButton } from "@/components/FundWalletButton";
-import { LiquidationLevelsIndicator } from "@/indicators/liquidationLevels";
+import { createLiquidationLevelsIndicator } from "@/indicators/liquidationLevels";
 
 interface MainNavItem {
   name: string;
@@ -400,7 +400,7 @@ export const useOrderlyConfig = () => {
           library_path: withBasePath("/tradingview/charting_library/"),
           customCssUrl: withBasePath("/tradingview/chart.css"),
           colorConfig: getColorConfig(),
-          customIndicatorsGetter: () => Promise.resolve([LiquidationLevelsIndicator]),
+          customIndicatorsGetter: (PineJS: any) => Promise.resolve([createLiquidationLevelsIndicator(PineJS)]),
         },
         sharePnLConfig: {
           backgroundImages: getPnLBackgroundImages(),
