@@ -1,5 +1,5 @@
 // Liquidation Levels Custom Indicator for TradingView
-// Simple version with 10x leverage
+// Shows 10x leverage liquidation levels
 
 export const LiquidationLevelsIndicator: any = {
   name: 'Liquidation Levels',
@@ -61,30 +61,53 @@ export const LiquidationLevelsIndicator: any = {
   },
 
   constructor: function () {
-    (this as any).main = function (context: any, inputCallback: any) {
-      // The context parameter contains the PineJS instance
-      // We need to access it from the symbol parameter
-      const { symbol } = context;
+    (this as any).init = function(context: any, inputCallback: any) {
+      (this as any)._context = context;
+      (this as any)._input = inputCallback;
+    };
 
-      // Get the close price from the symbol's data
-      // For custom indicators, we use the close price from the current bar
-      const close = (this as any)._context?.symbol()?.ticker?.close ||
-                    symbol?.ticker?.close ||
-                    context?.close?.(context) ||
-                    2000; // Fallback to a default value if we can't get the price
+    (this as any).main = function (context: any, inputCallback: any) {
+      // Access the context's symbol method
+      // The context.symbol() function returns the current symbol data
+      const symbolInfo = context.symbol();
+
+      // Get close price from PineJS standard library
+      // We need to get it from the context using the new keyword
+      const PineJS = context.new_sym ? context.new_sym(context.symbol.ticker, context.symbol.period) : null;
+
+      // Try multiple ways to get the current price
+      let close = 2000; // Default fallback
+
+      // Method 1: Try to get from symbol info
+      if (symbolInfo && symbolInfo.ticker) {
+        const priceStr = String(symbolInfo.ticker).match(/[\d.]+/);
+        if (priceStr) {
+          close = parseFloat(priceStr[0]);
+        }
+      }
+
+      // Method 2: Try to access from context close values
+      if (!close || close === 2000) {
+        if ((this as any)._context && (this as any)._context.symbol) {
+          const sym = (this as any)._context.symbol;
+          if (typeof sym === 'function') {
+            const symData = sym();
+            if (symData && symData.ticker) {
+              close = symData.ticker.close || symData.ticker.last || close;
+            }
+          } else if (sym && sym.ticker) {
+            close = sym.ticker.close || sym.ticker.last || close;
+          }
+        }
+      }
 
       // Calculate liquidation levels for 10x leverage
-      // Long liquidation: price drops 9.5% (10% for leverage + 0.5% fee buffer)
-      // Short liquidation: price rises 10.5% (10% for leverage + 0.5% fee buffer)
+      // Long liquidation: -10.5% (10% leverage + 0.5% fee)
+      // Short liquidation: +10.5% (10% leverage + 0.5% fee)
       const longLiq = close * 0.895;  // -10.5%
       const shortLiq = close * 1.105; // +10.5%
 
       return [longLiq, shortLiq];
-    };
-
-    (this as any).init = function(context: any, inputCallback: any) {
-      (this as any)._context = context;
-      (this as any)._input = inputCallback;
     };
   },
 };
