@@ -400,12 +400,12 @@ export const useOrderlyConfig = () => {
           library_path: withBasePath("/tradingview/charting_library/"),
           customCssUrl: withBasePath("/tradingview/chart.css"),
           colorConfig: getColorConfig(),
-          custom_indicators_getter: function(PineJS: any) {
+          customIndicatorsGetter: () => {
             console.log('🔥 CUSTOM INDICATORS GETTER CALLED');
             console.log('🔥 LiquidationLevelsIndicator:', LiquidationLevelsIndicator);
             const indicators = [LiquidationLevelsIndicator];
             console.log('🔥 Returning indicators:', indicators);
-            return Promise.resolve(indicators);
+            return indicators;
           },
         },
         sharePnLConfig: {
