@@ -65,6 +65,25 @@ export const SWAP_ROUTER_ABI = [
     ],
     outputs: [{ name: 'amountOut', type: 'uint256' }],
   },
+  {
+    name: 'unwrapWETH9',
+    type: 'function',
+    stateMutability: 'payable',
+    inputs: [
+      { name: 'amountMinimum', type: 'uint256' },
+      { name: 'recipient', type: 'address' },
+    ],
+    outputs: [],
+  },
+  {
+    name: 'multicall',
+    type: 'function',
+    stateMutability: 'payable',
+    inputs: [
+      { name: 'data', type: 'bytes[]' },
+    ],
+    outputs: [{ name: 'results', type: 'bytes[]' }],
+  },
 ] as const;
 
 export const QUOTER_V2_ABI = [

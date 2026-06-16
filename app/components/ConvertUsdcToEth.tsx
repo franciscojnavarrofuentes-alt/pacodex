@@ -142,33 +142,48 @@ export const ConvertUsdcToEth = ({ isOpen, onClose }: ConvertUsdcToEthProps) => 
         );
       }
 
-      // Step 2: Execute swap
+      // Step 2: Execute swap + unwrap WETH to native ETH via multicall
       setStep('swapping');
 
-      const swapData = encodeFunctionData({
+      // exactInputSingle sends WETH to the router (not the user)
+      const swapCalldata = encodeFunctionData({
         abi: SWAP_ROUTER_ABI,
         functionName: 'exactInputSingle',
         args: [{
           tokenIn: USDC_ADDRESS,
           tokenOut: WETH_ADDRESS,
           fee: POOL_FEE,
-          recipient: walletAddress,
+          recipient: SWAP_ROUTER_ADDRESS, // router holds WETH temporarily
           amountIn: amountIn,
           amountOutMinimum: amountOutMinimum,
           sqrtPriceLimitX96: 0n,
         }],
       });
 
+      // unwrapWETH9 converts WETH to native ETH and sends to user
+      const unwrapCalldata = encodeFunctionData({
+        abi: SWAP_ROUTER_ABI,
+        functionName: 'unwrapWETH9',
+        args: [amountOutMinimum, walletAddress],
+      });
+
+      // multicall batches both in a single transaction
+      const multicallData = encodeFunctionData({
+        abi: SWAP_ROUTER_ABI,
+        functionName: 'multicall',
+        args: [[swapCalldata, unwrapCalldata]],
+      });
+
       const receipt = await sendTransaction(
         {
           to: SWAP_ROUTER_ADDRESS,
-          data: swapData,
+          data: multicallData,
           chainId: ARBITRUM_CHAIN_ID,
         },
         { sponsor: true }
       );
 
-      setTxHash(receipt?.transactionHash || '');
+      setTxHash(receipt?.hash || '');
       setStep('success');
     } catch (err: any) {
       console.error('Swap error:', err);
