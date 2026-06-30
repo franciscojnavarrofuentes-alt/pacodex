@@ -6,7 +6,7 @@ import { SendFunds } from './SendFunds';
 export const FundWalletButton = ({ dropUp = false }: { dropUp?: boolean }) => {
   const { wallets } = useWallets();
   const { fundWallet } = useFundWallet();
-  const { user } = usePrivy();
+  const { user, getAccessToken } = usePrivy();
   const { initEnrollmentWithTotp, submitEnrollmentWithTotp, unenrollWithTotp } = useMfaEnrollment();
   const hasTotpMfa = user?.mfaMethods?.includes('totp');
   const [isLoading, setIsLoading] = useState(false);
@@ -58,13 +58,14 @@ export const FundWalletButton = ({ dropUp = false }: { dropUp?: boolean }) => {
     try {
       setMfaError(null);
       setMfaSuccess(false);
+      await getAccessToken();
       const { authUrl, secret } = await initEnrollmentWithTotp();
       setMfaAuthUrl(authUrl);
       setMfaSecret(secret);
     } catch (error: any) {
       setMfaError(error?.message || 'Failed to initialize 2FA');
     }
-  }, [initEnrollmentWithTotp]);
+  }, [initEnrollmentWithTotp, getAccessToken]);
 
   const handleSubmitMfa = useCallback(async () => {
     try {
