@@ -70,7 +70,7 @@ export const FundWalletButton = ({ dropUp = false }: { dropUp?: boolean }) => {
   const handleSubmitMfa = useCallback(async () => {
     try {
       setMfaError(null);
-      await submitEnrollmentWithTotp({ code: mfaCode });
+      await submitEnrollmentWithTotp({ mfaCode: mfaCode });
       setMfaSuccess(true);
       setMfaCode('');
     } catch (error: any) {
