@@ -1,4 +1,4 @@
-import { useFundWallet, useWallets } from '@privy-io/react-auth';
+import { useFundWallet, useWallets, useMfaEnrollment } from '@privy-io/react-auth';
 import { useCallback, useState, useRef, useEffect } from 'react';
 import { ConvertUsdcToEth } from './ConvertUsdcToEth';
 import { SendFunds } from './SendFunds';
@@ -6,10 +6,17 @@ import { SendFunds } from './SendFunds';
 export const FundWalletButton = ({ dropUp = false }: { dropUp?: boolean }) => {
   const { wallets } = useWallets();
   const { fundWallet } = useFundWallet();
+  const { initEnrollmentWithTotp, submitEnrollmentWithTotp } = useMfaEnrollment();
   const [isLoading, setIsLoading] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showConvert, setShowConvert] = useState(false);
   const [showSend, setShowSend] = useState(false);
+  const [showMfa, setShowMfa] = useState(false);
+  const [mfaSecret, setMfaSecret] = useState<string | null>(null);
+  const [mfaAuthUrl, setMfaAuthUrl] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaError, setMfaError] = useState<string | null>(null);
+  const [mfaSuccess, setMfaSuccess] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const embeddedWallet = wallets.find(
@@ -42,6 +49,29 @@ export const FundWalletButton = ({ dropUp = false }: { dropUp?: boolean }) => {
       setIsLoading(false);
     }
   }, [embeddedWallet, fundWallet]);
+
+  const handleInitMfa = useCallback(async () => {
+    try {
+      setMfaError(null);
+      setMfaSuccess(false);
+      const { authUrl, secret } = await initEnrollmentWithTotp();
+      setMfaAuthUrl(authUrl);
+      setMfaSecret(secret);
+    } catch (error: any) {
+      setMfaError(error?.message || 'Failed to initialize 2FA');
+    }
+  }, [initEnrollmentWithTotp]);
+
+  const handleSubmitMfa = useCallback(async () => {
+    try {
+      setMfaError(null);
+      await submitEnrollmentWithTotp({ code: mfaCode });
+      setMfaSuccess(true);
+      setMfaCode('');
+    } catch (error: any) {
+      setMfaError(error?.message || 'Invalid code. Please try again.');
+    }
+  }, [submitEnrollmentWithTotp, mfaCode]);
 
   if (!embeddedWallet) {
     return null;
@@ -144,6 +174,29 @@ export const FundWalletButton = ({ dropUp = false }: { dropUp?: boolean }) => {
             >
               Send
             </button>
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }} />
+            <button
+              onClick={() => {
+                setShowMenu(false);
+                setShowMfa(true);
+                handleInitMfa();
+              }}
+              style={{
+                display: 'block',
+                width: '100%',
+                padding: '10px 16px',
+                background: 'transparent',
+                color: 'white',
+                border: 'none',
+                textAlign: 'left',
+                cursor: 'pointer',
+                fontSize: '14px',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            >
+              Enable 2FA
+            </button>
           </div>
         )}
       </div>
@@ -155,6 +208,150 @@ export const FundWalletButton = ({ dropUp = false }: { dropUp?: boolean }) => {
         isOpen={showSend}
         onClose={() => setShowSend(false)}
       />
+      {showMfa && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.7)',
+            zIndex: 2000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={() => {
+            setShowMfa(false);
+            setMfaSecret(null);
+            setMfaAuthUrl(null);
+            setMfaCode('');
+            setMfaError(null);
+            setMfaSuccess(false);
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#1e1e2e',
+              borderRadius: '12px',
+              padding: '24px',
+              maxWidth: '400px',
+              width: '90%',
+              color: 'white',
+            }}
+          >
+            <h3 style={{ margin: '0 0 16px', fontSize: '18px', fontWeight: 600 }}>
+              Enable 2FA
+            </h3>
+            {mfaSuccess ? (
+              <div>
+                <p style={{ color: '#4ade80', margin: '0 0 16px' }}>
+                  2FA has been enabled successfully!
+                </p>
+                <button
+                  onClick={() => {
+                    setShowMfa(false);
+                    setMfaSuccess(false);
+                    setMfaSecret(null);
+                    setMfaAuthUrl(null);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    background: '#7155ef',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                  }}
+                >
+                  Done
+                </button>
+              </div>
+            ) : !mfaSecret ? (
+              <p style={{ color: 'rgba(255,255,255,0.6)', margin: 0 }}>
+                Setting up authenticator...
+              </p>
+            ) : (
+              <div>
+                <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', margin: '0 0 12px' }}>
+                  Open your authenticator app and add this key manually:
+                </p>
+                <div
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    marginBottom: '16px',
+                    wordBreak: 'break-all',
+                    fontSize: '13px',
+                    fontFamily: 'monospace',
+                    cursor: 'pointer',
+                  }}
+                  onClick={() => {
+                    navigator.clipboard.writeText(mfaSecret);
+                  }}
+                  title="Click to copy"
+                >
+                  {mfaSecret}
+                </div>
+                <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', margin: '0 0 8px' }}>
+                  Enter the 6-digit code from your authenticator:
+                </p>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={mfaCode}
+                  onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ''))}
+                  placeholder="000000"
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '8px',
+                    color: 'white',
+                    fontSize: '18px',
+                    textAlign: 'center',
+                    letterSpacing: '8px',
+                    marginBottom: '12px',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+                {mfaError && (
+                  <p style={{ color: '#f87171', fontSize: '13px', margin: '0 0 12px' }}>
+                    {mfaError}
+                  </p>
+                )}
+                <button
+                  onClick={handleSubmitMfa}
+                  disabled={mfaCode.length !== 6}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    background: mfaCode.length === 6 ? '#7155ef' : 'rgba(113,85,239,0.4)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: mfaCode.length === 6 ? 'pointer' : 'not-allowed',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                  }}
+                >
+                  Verify & Enable
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 };
