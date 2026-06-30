@@ -7,13 +7,15 @@ export const FundWalletButton = ({ dropUp = false }: { dropUp?: boolean }) => {
   const { wallets } = useWallets();
   const { fundWallet } = useFundWallet();
   const { user } = usePrivy();
-  const { initEnrollmentWithTotp, submitEnrollmentWithTotp } = useMfaEnrollment();
+  const { initEnrollmentWithTotp, submitEnrollmentWithTotp, unenrollWithTotp } = useMfaEnrollment();
   const hasTotpMfa = user?.mfaMethods?.includes('totp');
   const [isLoading, setIsLoading] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showConvert, setShowConvert] = useState(false);
   const [showSend, setShowSend] = useState(false);
   const [showMfa, setShowMfa] = useState(false);
+  const [showDisableMfa, setShowDisableMfa] = useState(false);
+  const [disablingMfa, setDisablingMfa] = useState(false);
   const [mfaSecret, setMfaSecret] = useState<string | null>(null);
   const [mfaAuthUrl, setMfaAuthUrl] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState('');
@@ -74,6 +76,19 @@ export const FundWalletButton = ({ dropUp = false }: { dropUp?: boolean }) => {
       setMfaError(error?.message || 'Invalid code. Please try again.');
     }
   }, [submitEnrollmentWithTotp, mfaCode]);
+
+  const handleDisableMfa = useCallback(async () => {
+    try {
+      setDisablingMfa(true);
+      setMfaError(null);
+      await unenrollWithTotp();
+      setShowDisableMfa(false);
+    } catch (error: any) {
+      setMfaError(error?.message || 'Failed to disable 2FA');
+    } finally {
+      setDisablingMfa(false);
+    }
+  }, [unenrollWithTotp]);
 
   if (!embeddedWallet) {
     return null;
@@ -179,12 +194,15 @@ export const FundWalletButton = ({ dropUp = false }: { dropUp?: boolean }) => {
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }} />
             <button
               onClick={() => {
-                if (hasTotpMfa) return;
                 setShowMenu(false);
-                setShowMfa(true);
-                handleInitMfa();
+                if (hasTotpMfa) {
+                  setMfaError(null);
+                  setShowDisableMfa(true);
+                } else {
+                  setShowMfa(true);
+                  handleInitMfa();
+                }
               }}
-              disabled={hasTotpMfa}
               style={{
                 display: 'block',
                 width: '100%',
@@ -193,13 +211,13 @@ export const FundWalletButton = ({ dropUp = false }: { dropUp?: boolean }) => {
                 color: hasTotpMfa ? 'rgba(74, 222, 128, 0.8)' : 'white',
                 border: 'none',
                 textAlign: 'left',
-                cursor: hasTotpMfa ? 'default' : 'pointer',
+                cursor: 'pointer',
                 fontSize: '14px',
               }}
-              onMouseEnter={(e) => { if (!hasTotpMfa) e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             >
-              {hasTotpMfa ? '2FA Enabled' : 'Enable 2FA'}
+              {hasTotpMfa ? 'Disable 2FA' : 'Enable 2FA'}
             </button>
           </div>
         )}
@@ -212,6 +230,88 @@ export const FundWalletButton = ({ dropUp = false }: { dropUp?: boolean }) => {
         isOpen={showSend}
         onClose={() => setShowSend(false)}
       />
+      {showDisableMfa && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.7)',
+            zIndex: 2000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={() => {
+            setShowDisableMfa(false);
+            setMfaError(null);
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#1e1e2e',
+              borderRadius: '12px',
+              padding: '24px',
+              maxWidth: '400px',
+              width: '90%',
+              color: 'white',
+            }}
+          >
+            <h3 style={{ margin: '0 0 16px', fontSize: '18px', fontWeight: 600 }}>
+              Disable 2FA
+            </h3>
+            <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', margin: '0 0 16px' }}>
+              Are you sure you want to disable two-factor authentication? This will make your account less secure.
+            </p>
+            {mfaError && (
+              <p style={{ color: '#f87171', fontSize: '13px', margin: '0 0 12px' }}>
+                {mfaError}
+              </p>
+            )}
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => {
+                  setShowDisableMfa(false);
+                  setMfaError(null);
+                }}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  background: 'rgba(255,255,255,0.1)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDisableMfa}
+                disabled={disablingMfa}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  background: disablingMfa ? 'rgba(239,68,68,0.4)' : '#ef4444',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: disablingMfa ? 'not-allowed' : 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                }}
+              >
+                {disablingMfa ? 'Disabling...' : 'Disable 2FA'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {showMfa && (
         <div
           style={{
