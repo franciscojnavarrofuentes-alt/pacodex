@@ -378,9 +378,38 @@ export const FundWalletButton = ({ dropUp = false }: { dropUp?: boolean }) => {
                 </button>
               </div>
             ) : !mfaSecret ? (
-              <p style={{ color: 'rgba(255,255,255,0.6)', margin: 0 }}>
-                Setting up authenticator...
-              </p>
+              <div>
+                {mfaError ? (
+                  <>
+                    <p style={{ color: '#f87171', fontSize: '14px', margin: '0 0 16px' }}>
+                      {mfaError}
+                    </p>
+                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', margin: '0 0 16px' }}>
+                      Try logging out and back in, then try again.
+                    </p>
+                    <button
+                      onClick={handleInitMfa}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        background: '#7155ef',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                      }}
+                    >
+                      Retry
+                    </button>
+                  </>
+                ) : (
+                  <p style={{ color: 'rgba(255,255,255,0.6)', margin: 0 }}>
+                    Setting up authenticator...
+                  </p>
+                )}
+              </div>
             ) : (
               <div>
                 <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', margin: '0 0 12px' }}>
