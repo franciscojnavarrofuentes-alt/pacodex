@@ -46,6 +46,9 @@ const PrivyConnector = ({ children, networkId }: {
       solanaConfig={disableSolanaWallets ? undefined : getSolanaConfig(networkId)}
       privyConfig={{
         config: {
+          mfa: {
+            noPromptOnMfaRequired: false,
+          },
           appearance: {
             showWalletLoginFirst: false,
           },
