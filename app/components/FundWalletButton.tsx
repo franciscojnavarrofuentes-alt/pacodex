@@ -1,4 +1,4 @@
-import { useFundWallet, useWallets, useMfaEnrollment } from '@privy-io/react-auth';
+import { useFundWallet, useWallets, useMfaEnrollment, usePrivy } from '@privy-io/react-auth';
 import { useCallback, useState, useRef, useEffect } from 'react';
 import { ConvertUsdcToEth } from './ConvertUsdcToEth';
 import { SendFunds } from './SendFunds';
@@ -6,7 +6,9 @@ import { SendFunds } from './SendFunds';
 export const FundWalletButton = ({ dropUp = false }: { dropUp?: boolean }) => {
   const { wallets } = useWallets();
   const { fundWallet } = useFundWallet();
+  const { user } = usePrivy();
   const { initEnrollmentWithTotp, submitEnrollmentWithTotp } = useMfaEnrollment();
+  const hasTotpMfa = user?.mfaMethods?.includes('totp');
   const [isLoading, setIsLoading] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showConvert, setShowConvert] = useState(false);
@@ -177,25 +179,27 @@ export const FundWalletButton = ({ dropUp = false }: { dropUp?: boolean }) => {
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }} />
             <button
               onClick={() => {
+                if (hasTotpMfa) return;
                 setShowMenu(false);
                 setShowMfa(true);
                 handleInitMfa();
               }}
+              disabled={hasTotpMfa}
               style={{
                 display: 'block',
                 width: '100%',
                 padding: '10px 16px',
                 background: 'transparent',
-                color: 'white',
+                color: hasTotpMfa ? 'rgba(74, 222, 128, 0.8)' : 'white',
                 border: 'none',
                 textAlign: 'left',
-                cursor: 'pointer',
+                cursor: hasTotpMfa ? 'default' : 'pointer',
                 fontSize: '14px',
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
+              onMouseEnter={(e) => { if (!hasTotpMfa) e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             >
-              Enable 2FA
+              {hasTotpMfa ? '2FA Enabled' : 'Enable 2FA'}
             </button>
           </div>
         )}
