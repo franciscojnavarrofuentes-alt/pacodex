@@ -12,16 +12,13 @@ import { getRuntimeConfig, getRuntimeConfigBoolean } from '@/utils/runtime-confi
 function usePrivyFocusTrapFix() {
   useEffect(() => {
     const observer = new MutationObserver(() => {
-      const privyDialog = document.querySelector('.privy-dialog, .privy-modal, [class*="privy-dialog"], [class*="privy-modal"]') as HTMLElement | null;
-      if (privyDialog) {
-        let el: HTMLElement | null = privyDialog;
-        while (el) {
-          if (el.hasAttribute('inert')) {
-            el.removeAttribute('inert');
-          }
-          el = el.parentElement;
-        }
-      }
+      // Privy renders its MFA modal in an iframe from auth.privy.io
+      const privyIframe = document.querySelector('iframe[src*="privy.io"]');
+      if (!privyIframe) return;
+      // Remove inert from all elements so Privy's iframe can receive focus
+      document.querySelectorAll('[inert]').forEach((el) => {
+        el.removeAttribute('inert');
+      });
     });
     observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['inert'] });
     return () => observer.disconnect();
