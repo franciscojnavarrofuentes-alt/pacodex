@@ -72,6 +72,12 @@ export const MfaVerificationModal = () => {
     style.textContent = `
       dialog[open] { display: none !important; }
       [data-privy-dialog] { display: none !important; }
+      #privy-modal-content { display: none !important; }
+      #privy-dialog { display: none !important; }
+      #privy-dialog-backdrop { display: none !important; }
+      [class*="privy-dialog"] { display: none !important; }
+      [class*="privy-modal"] { display: none !important; }
+      iframe[src*="privy.io"] { display: none !important; }
     `;
     document.head.appendChild(style);
     return () => {
