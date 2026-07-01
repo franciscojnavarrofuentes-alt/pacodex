@@ -1,41 +1,10 @@
-import { ReactNode, useEffect } from 'react';
+import { ReactNode } from 'react';
 import { WalletConnectorPrivyProvider, Network } from '@orderly.network/wallet-connector-privy';
 import type { NetworkId } from "@orderly.network/types";
 import { QueryClient } from "@tanstack/query-core";
 import { getEvmConnectors, getSolanaConfig } from '../../utils/walletConfig';
 import { getRuntimeConfig, getRuntimeConfigBoolean } from '@/utils/runtime-config';
-
-// Fix: Radix UI FocusTrap blocks Privy MFA modal input.
-// When Privy opens its modal on top of a Radix dialog, the FocusTrap
-// sets inert on elements outside its scope, preventing typing in Privy's modal.
-// This observer removes inert from Privy's modal container when detected.
-function usePrivyFocusTrapFix() {
-  useEffect(() => {
-    // 1. Remove inert attributes that block Privy's modal
-    const observer = new MutationObserver(() => {
-      const privyIframe = document.querySelector('iframe[src*="privy.io"]');
-      if (!privyIframe) return;
-      document.querySelectorAll('[inert]').forEach((el) => {
-        el.removeAttribute('inert');
-      });
-    });
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['inert'] });
-
-    // 2. Prevent Radix FocusTrap from stealing focus back from Privy's iframe
-    const handleFocusIn = (e: FocusEvent) => {
-      const target = e.target as HTMLElement;
-      if (target instanceof HTMLIFrameElement && target.src?.includes('privy.io')) {
-        e.stopImmediatePropagation();
-      }
-    };
-    document.addEventListener('focusin', handleFocusIn, true);
-
-    return () => {
-      observer.disconnect();
-      document.removeEventListener('focusin', handleFocusIn, true);
-    };
-  }, []);
-}
+import { MfaVerificationModal } from '../MfaVerificationModal';
 
 type LoginMethod = "email" | "passkey" | "twitter" | "google";
 
@@ -44,12 +13,12 @@ const getLoginMethods = (): LoginMethod[] => {
   if (!loginMethodsEnv) {
     return ['email'];
   }
-  
+
   const validMethods: LoginMethod[] = ["email", "passkey", "twitter", "google"];
-  
+
   return loginMethodsEnv.split(',')
     .map((method: string) => method.trim())
-    .filter((method: string): method is LoginMethod => 
+    .filter((method: string): method is LoginMethod =>
       validMethods.includes(method as LoginMethod)
     );
 };
@@ -68,8 +37,6 @@ const PrivyConnector = ({ children, networkId }: {
   const disableSolanaWallets = getRuntimeConfigBoolean('VITE_DISABLE_SOLANA_WALLETS');
   const loginMethods = getLoginMethods();
 
-  usePrivyFocusTrapFix();
-
   return (
     <WalletConnectorPrivyProvider
       network={networkId === 'mainnet' ? Network.mainnet : Network.testnet}
@@ -81,7 +48,7 @@ const PrivyConnector = ({ children, networkId }: {
       privyConfig={{
         config: {
           mfa: {
-            noPromptOnMfaRequired: false,
+            noPromptOnMfaRequired: true,
           },
           appearance: {
             showWalletLoginFirst: false,
@@ -103,9 +70,10 @@ const PrivyConnector = ({ children, networkId }: {
         queryClient: new QueryClient(),
       } : undefined}
     >
+      <MfaVerificationModal />
       {children}
     </WalletConnectorPrivyProvider>
   );
 };
 
-export default PrivyConnector; 
+export default PrivyConnector;
