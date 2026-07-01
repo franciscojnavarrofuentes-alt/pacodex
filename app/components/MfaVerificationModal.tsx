@@ -13,7 +13,7 @@ export const MfaVerificationModal = () => {
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const modalRef = useRef<HTMLDivElement>(null);
+  const codeRef = useRef('');
 
   const { init, submit, cancel } = useMfa();
 
@@ -23,6 +23,7 @@ export const MfaVerificationModal = () => {
       if (Array.isArray(methods) && methods.includes('totp')) {
         setShowModal(true);
         setCode('');
+        codeRef.current = '';
         setError(null);
         setSubmitting(false);
         try {
@@ -35,13 +36,14 @@ export const MfaVerificationModal = () => {
   });
 
   const handleSubmit = useCallback(async () => {
-    if (code.length !== 6) return;
+    if (codeRef.current.length !== 6) return;
     try {
       setSubmitting(true);
       setError(null);
-      await submit('totp', code);
+      await submit('totp', codeRef.current);
       setShowModal(false);
       setCode('');
+      codeRef.current = '';
     } catch (e: unknown) {
       if (errorIndicatesMfaVerificationFailed(e)) {
         setError('Invalid code. Please try again.');
@@ -53,15 +55,17 @@ export const MfaVerificationModal = () => {
         setError((e as any)?.message || 'Verification failed.');
       }
       setCode('');
+      codeRef.current = '';
     } finally {
       setSubmitting(false);
     }
-  }, [code, submit]);
+  }, [submit]);
 
   const handleCancel = useCallback(() => {
     cancel();
     setShowModal(false);
     setCode('');
+    codeRef.current = '';
     setError(null);
   }, [cancel]);
 
@@ -105,47 +109,49 @@ export const MfaVerificationModal = () => {
     };
   }, [showModal]);
 
-  // Fight Radix FocusTrap: intercept focus events and force focus back
-  // to our modal when FocusTrap tries to steal it
+  // Capture keyboard input globally - bypasses FocusTrap entirely
+  // since we don't need the input to be focused to receive keystrokes
   useEffect(() => {
     if (!showModal) return;
 
-    const handleFocusIn = (e: FocusEvent) => {
-      if (!modalRef.current) return;
-      if (modalRef.current.contains(e.target as Node)) {
-        // Focus is inside our modal - block FocusTrap from seeing it
-        e.stopImmediatePropagation();
-      } else {
-        // FocusTrap stole focus outside our modal - take it back
-        e.stopImmediatePropagation();
-        const input = modalRef.current.querySelector('input');
-        if (input) requestAnimationFrame(() => input.focus());
-      }
-    };
-
-    document.addEventListener('focusin', handleFocusIn, true);
-    return () => document.removeEventListener('focusin', handleFocusIn, true);
-  }, [showModal]);
-
-  // Submit on Enter key
-  useEffect(() => {
-    if (!showModal) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Enter' && code.length === 6 && !submitting) {
+      // Ignore if user is typing in some other input (shouldn't happen with modal open)
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      if (e.key >= '0' && e.key <= '9' && codeRef.current.length < 6 && !submitting) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const newCode = codeRef.current + e.key;
+        codeRef.current = newCode;
+        setCode(newCode);
+      } else if (e.key === 'Backspace') {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const newCode = codeRef.current.slice(0, -1);
+        codeRef.current = newCode;
+        setCode(newCode);
+      } else if (e.key === 'Enter' && codeRef.current.length === 6 && !submitting) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
         handleSubmit();
       } else if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopImmediatePropagation();
         handleCancel();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showModal, code, submitting, handleSubmit, handleCancel]);
+
+    // Use capture phase to intercept before anything else
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, [showModal, submitting, handleSubmit, handleCancel]);
 
   if (!showModal) return null;
 
   return createPortal(
     <div
-      ref={modalRef}
       style={{
         position: 'fixed',
         top: 0,
@@ -177,30 +183,39 @@ export const MfaVerificationModal = () => {
         <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', margin: '0 0 12px' }}>
           Enter the 6-digit code from your authenticator app to confirm this transaction.
         </p>
-        <input
-          type="text"
-          inputMode="numeric"
-          maxLength={6}
-          autoFocus
-          value={code}
-          onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-          onMouseDown={(e) => e.stopPropagation()}
-          placeholder="000000"
+        {/* Display-only code boxes - keyboard input is captured globally */}
+        <div
           style={{
-            width: '100%',
-            padding: '10px',
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            borderRadius: '8px',
-            color: 'white',
-            fontSize: '18px',
-            textAlign: 'center',
-            letterSpacing: '8px',
+            display: 'flex',
+            gap: '8px',
+            justifyContent: 'center',
             marginBottom: '12px',
-            outline: 'none',
-            boxSizing: 'border-box',
           }}
-        />
+        >
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div
+              key={i}
+              style={{
+                width: '40px',
+                height: '48px',
+                background: 'rgba(255,255,255,0.05)',
+                border: `1px solid ${code.length === i ? '#7155ef' : 'rgba(255,255,255,0.2)'}`,
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '20px',
+                fontWeight: 600,
+                color: 'white',
+              }}
+            >
+              {code[i] || ''}
+            </div>
+          ))}
+        </div>
+        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', textAlign: 'center', margin: '0 0 12px' }}>
+          Just type your code — no need to click
+        </p>
         {error && (
           <p style={{ color: '#f87171', fontSize: '13px', margin: '0 0 12px' }}>
             {error}
