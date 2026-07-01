@@ -21,6 +21,7 @@ export const FundWalletButton = ({ dropUp = false }: { dropUp?: boolean }) => {
   const [mfaCode, setMfaCode] = useState('');
   const [mfaError, setMfaError] = useState<string | null>(null);
   const [mfaSuccess, setMfaSuccess] = useState(false);
+  const [mfaCopied, setMfaCopied] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const embeddedWallet = wallets.find(
@@ -422,17 +423,41 @@ export const FundWalletButton = ({ dropUp = false }: { dropUp?: boolean }) => {
                     borderRadius: '8px',
                     padding: '12px',
                     marginBottom: '16px',
-                    wordBreak: 'break-all',
-                    fontSize: '13px',
-                    fontFamily: 'monospace',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
                     cursor: 'pointer',
                   }}
                   onClick={() => {
                     navigator.clipboard.writeText(mfaSecret);
+                    setMfaCopied(true);
+                    setTimeout(() => setMfaCopied(false), 2000);
                   }}
                   title="Click to copy"
                 >
-                  {mfaSecret}
+                  <span style={{ wordBreak: 'break-all', fontSize: '13px', fontFamily: 'monospace', flex: 1 }}>
+                    {mfaSecret}
+                  </span>
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke={mfaCopied ? '#4ade80' : 'rgba(255,255,255,0.5)'}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ flexShrink: 0 }}
+                  >
+                    {mfaCopied ? (
+                      <polyline points="20 6 9 17 4 12" />
+                    ) : (
+                      <>
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                      </>
+                    )}
+                  </svg>
                 </div>
                 <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', margin: '0 0 8px' }}>
                   Enter the 6-digit code from your authenticator:
