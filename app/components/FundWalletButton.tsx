@@ -210,7 +210,7 @@ export const FundWalletButton = ({ dropUp = false }: { dropUp?: boolean }) => {
                 width: '100%',
                 padding: '10px 16px',
                 background: 'transparent',
-                color: hasTotpMfa ? 'rgba(74, 222, 128, 0.8)' : 'white',
+                color: hasTotpMfa ? '#ef4444' : 'white',
                 border: 'none',
                 textAlign: 'left',
                 cursor: 'pointer',

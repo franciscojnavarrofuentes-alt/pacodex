@@ -27,7 +27,7 @@ export const MfaVerificationModal = () => {
     (async () => {
       try {
         const provider = await embeddedWallet.getEthereumProvider();
-        const msg = '0x' + Array.from(new TextEncoder().encode('Verify identity'))
+        const msg = '0x' + Array.from(new TextEncoder().encode('Sign this message for 2FA verification'))
           .map((b) => b.toString(16).padStart(2, '0')).join('');
         await provider.request({
           method: 'personal_sign',
