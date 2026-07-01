@@ -146,7 +146,7 @@ export const MfaVerificationModal = () => {
         right: 0,
         bottom: 0,
         background: 'rgba(0,0,0,0.7)',
-        zIndex: 9999,
+        zIndex: 99999,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
