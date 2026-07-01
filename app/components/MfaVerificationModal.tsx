@@ -2,6 +2,8 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   useRegisterMfaListener,
   useMfa,
+  usePrivy,
+  useWallets,
   errorIndicatesMfaVerificationFailed,
   errorIndicatesMaxMfaRetries,
   errorIndicatesMfaTimeout,
@@ -16,6 +18,40 @@ export const MfaVerificationModal = () => {
   const codeRef = useRef('');
 
   const { init, submit, cancel } = useMfa();
+  const { authenticated, user } = usePrivy();
+  const { wallets } = useWallets();
+  const mfaTriggeredRef = useRef(false);
+
+  // Trigger MFA verification right after login to establish session
+  // This avoids FocusTrap conflicts since no Orderly dialog is open yet
+  useEffect(() => {
+    if (!authenticated || !user || mfaTriggeredRef.current) return;
+
+    const hasMfa = user.mfaMethods?.includes('totp');
+    if (!hasMfa) return;
+
+    const embeddedWallet = wallets.find(
+      (w) => (w as any).walletClientType === 'privy'
+    );
+    if (!embeddedWallet) return;
+
+    mfaTriggeredRef.current = true;
+
+    (async () => {
+      try {
+        const provider = await embeddedWallet.getEthereumProvider();
+        const msg = '0x' + Array.from(new TextEncoder().encode('Verify identity'))
+          .map((b) => b.toString(16).padStart(2, '0')).join('');
+        await provider.request({
+          method: 'personal_sign',
+          params: [msg, embeddedWallet.address],
+        });
+      } catch {
+        // MFA cancelled or failed - will be prompted on next transaction
+        mfaTriggeredRef.current = false;
+      }
+    })();
+  }, [authenticated, user, wallets]);
 
   useRegisterMfaListener({
     onMfaRequired: async (params) => {
@@ -202,7 +238,7 @@ export const MfaVerificationModal = () => {
           Enter verification code
         </h3>
         <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', margin: '0 0 12px' }}>
-          Enter the 6-digit code from your authenticator app to confirm this transaction.
+          Enter the 6-digit code from your authenticator app to verify your identity.
         </p>
         {/* Display-only code boxes - keyboard input is captured globally */}
         <div
