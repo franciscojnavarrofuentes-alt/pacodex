@@ -78,6 +78,8 @@ export const MfaVerificationModal = () => {
       [class*="privy-dialog"] { display: none !important; }
       [class*="privy-modal"] { display: none !important; }
       iframe[src*="privy.io"] { display: none !important; }
+      [role="dialog"] { visibility: hidden !important; }
+      [data-radix-portal] { visibility: hidden !important; }
     `;
     document.head.appendChild(style);
     return () => {
