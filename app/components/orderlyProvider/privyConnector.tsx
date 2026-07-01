@@ -48,7 +48,7 @@ const PrivyConnector = ({ children, networkId }: {
       privyConfig={{
         config: {
           mfa: {
-            noPromptOnMfaRequired: true,
+            noPromptOnMfaRequired: false,
           },
           appearance: {
             showWalletLoginFirst: false,
