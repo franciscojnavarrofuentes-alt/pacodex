@@ -327,7 +327,7 @@ export const FundWalletButton = ({ dropUp = false }: { dropUp?: boolean }) => {
             alignItems: 'center',
             justifyContent: 'center',
           }}
-          onClick={() => {
+          onMouseDown={() => {
             setShowMfa(false);
             setMfaSecret(null);
             setMfaAuthUrl(null);
@@ -337,7 +337,7 @@ export const FundWalletButton = ({ dropUp = false }: { dropUp?: boolean }) => {
           }}
         >
           <div
-            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
             style={{
               background: '#1e1e2e',
               borderRadius: '12px',
@@ -441,8 +441,10 @@ export const FundWalletButton = ({ dropUp = false }: { dropUp?: boolean }) => {
                   type="text"
                   inputMode="numeric"
                   maxLength={6}
+                  autoFocus
                   value={mfaCode}
                   onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ''))}
+                  onMouseDown={(e) => e.stopPropagation()}
                   placeholder="000000"
                   style={{
                     width: '100%',
