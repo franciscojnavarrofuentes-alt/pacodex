@@ -1,9 +1,32 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { WalletConnectorPrivyProvider, Network } from '@orderly.network/wallet-connector-privy';
 import type { NetworkId } from "@orderly.network/types";
 import { QueryClient } from "@tanstack/query-core";
 import { getEvmConnectors, getSolanaConfig } from '../../utils/walletConfig';
 import { getRuntimeConfig, getRuntimeConfigBoolean } from '@/utils/runtime-config';
+
+// Fix: Radix UI FocusTrap blocks Privy MFA modal input.
+// When Privy opens its modal on top of a Radix dialog, the FocusTrap
+// sets inert on elements outside its scope, preventing typing in Privy's modal.
+// This observer removes inert from Privy's modal container when detected.
+function usePrivyFocusTrapFix() {
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const privyDialog = document.querySelector('.privy-dialog, .privy-modal, [class*="privy-dialog"], [class*="privy-modal"]') as HTMLElement | null;
+      if (privyDialog) {
+        let el: HTMLElement | null = privyDialog;
+        while (el) {
+          if (el.hasAttribute('inert')) {
+            el.removeAttribute('inert');
+          }
+          el = el.parentElement;
+        }
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['inert'] });
+    return () => observer.disconnect();
+  }, []);
+}
 
 type LoginMethod = "email" | "passkey" | "twitter" | "google";
 
@@ -35,6 +58,8 @@ const PrivyConnector = ({ children, networkId }: {
   const disableEVMWallets = getRuntimeConfigBoolean('VITE_DISABLE_EVM_WALLETS');
   const disableSolanaWallets = getRuntimeConfigBoolean('VITE_DISABLE_SOLANA_WALLETS');
   const loginMethods = getLoginMethods();
+
+  usePrivyFocusTrapFix();
 
   return (
     <WalletConnectorPrivyProvider
