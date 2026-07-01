@@ -234,9 +234,34 @@ export const MfaVerificationModal = () => {
             </div>
           ))}
         </div>
-        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)', textAlign: 'center', margin: '0 0 12px' }}>
-          Just type your code — no need to click
-        </p>
+        <button
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            navigator.clipboard.readText().then((text) => {
+              const digits = text.replace(/\D/g, '').slice(0, 6);
+              if (digits.length > 0) {
+                codeRef.current = digits;
+                setCode(digits);
+                if (digits.length === 6) {
+                  setTimeout(() => handleSubmit(), 150);
+                }
+              }
+            }).catch(() => {});
+          }}
+          style={{
+            display: 'block',
+            margin: '0 auto 12px',
+            padding: '6px 16px',
+            background: 'rgba(255,255,255,0.08)',
+            color: 'rgba(255,255,255,0.6)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontSize: '13px',
+          }}
+        >
+          Paste code
+        </button>
         {error && (
           <p style={{ color: '#f87171', fontSize: '13px', margin: '0 0 12px' }}>
             {error}
