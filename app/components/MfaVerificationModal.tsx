@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   useRegisterMfaListener,
   useMfa,
@@ -13,6 +13,7 @@ export const MfaVerificationModal = () => {
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   const { init, submit, cancel } = useMfa();
 
@@ -78,8 +79,8 @@ export const MfaVerificationModal = () => {
       [class*="privy-dialog"] { display: none !important; }
       [class*="privy-modal"] { display: none !important; }
       iframe[src*="privy.io"] { display: none !important; }
-      [role="dialog"] { visibility: hidden !important; }
-      [data-radix-portal] { visibility: hidden !important; }
+      [role="dialog"] { display: none !important; }
+      [data-radix-portal] { display: none !important; }
     `;
     document.head.appendChild(style);
 
@@ -104,6 +105,21 @@ export const MfaVerificationModal = () => {
     };
   }, [showModal]);
 
+  // Intercept focusin in capture phase to prevent Radix FocusTrap
+  // from stealing focus away from our modal input
+  useEffect(() => {
+    if (!showModal) return;
+
+    const handleFocusIn = (e: FocusEvent) => {
+      if (modalRef.current && modalRef.current.contains(e.target as Node)) {
+        e.stopImmediatePropagation();
+      }
+    };
+
+    document.addEventListener('focusin', handleFocusIn, true);
+    return () => document.removeEventListener('focusin', handleFocusIn, true);
+  }, [showModal]);
+
   // Submit on Enter key
   useEffect(() => {
     if (!showModal) return;
@@ -122,6 +138,7 @@ export const MfaVerificationModal = () => {
 
   return createPortal(
     <div
+      ref={modalRef}
       style={{
         position: 'fixed',
         top: 0,
