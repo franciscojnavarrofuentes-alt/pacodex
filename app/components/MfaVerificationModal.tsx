@@ -64,7 +64,7 @@ export const MfaVerificationModal = () => {
     setError(null);
   }, [cancel]);
 
-  // Hide Privy's native dialog when our MFA modal is shown
+  // Hide Privy's native dialog and disable Radix FocusTrap when our MFA modal is shown
   useEffect(() => {
     if (!showModal) return;
     const style = document.createElement('style');
@@ -82,8 +82,14 @@ export const MfaVerificationModal = () => {
       [data-radix-portal] { visibility: hidden !important; }
     `;
     document.head.appendChild(style);
+
+    // Set inert on all Radix portals to fully disable FocusTrap
+    const portals = document.querySelectorAll('[data-radix-portal]');
+    portals.forEach((el) => el.setAttribute('inert', ''));
+
     return () => {
       style.remove();
+      portals.forEach((el) => el.removeAttribute('inert'));
     };
   }, [showModal]);
 
