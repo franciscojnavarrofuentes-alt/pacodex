@@ -120,6 +120,23 @@ export const MfaVerificationModal = () => {
         return;
       }
 
+      // Handle paste (Ctrl+V / Cmd+V)
+      if (e.key === 'v' && (e.ctrlKey || e.metaKey) && !submitting) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        navigator.clipboard.readText().then((text) => {
+          const digits = text.replace(/\D/g, '').slice(0, 6);
+          if (digits.length > 0) {
+            codeRef.current = digits;
+            setCode(digits);
+            if (digits.length === 6) {
+              setTimeout(() => handleSubmit(), 150);
+            }
+          }
+        }).catch(() => {});
+        return;
+      }
+
       if (e.key >= '0' && e.key <= '9' && codeRef.current.length < 6 && !submitting) {
         e.preventDefault();
         e.stopImmediatePropagation();
