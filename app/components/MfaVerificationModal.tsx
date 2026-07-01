@@ -17,8 +17,9 @@ export const MfaVerificationModal = () => {
   const { init, submit, cancel } = useMfa();
 
   useRegisterMfaListener({
-    onMfaRequired: async (methods) => {
-      if (methods.includes('totp')) {
+    onMfaRequired: async (params) => {
+      const methods = params?.mfaMethods ?? params;
+      if (Array.isArray(methods) && methods.includes('totp')) {
         setShowModal(true);
         setCode('');
         setError(null);
