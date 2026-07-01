@@ -79,8 +79,8 @@ export const MfaVerificationModal = () => {
       [class*="privy-dialog"] { display: none !important; }
       [class*="privy-modal"] { display: none !important; }
       iframe[src*="privy.io"] { display: none !important; }
-      [role="dialog"] { display: none !important; }
-      [data-radix-portal] { display: none !important; }
+      [role="dialog"] { visibility: hidden !important; }
+      [data-radix-portal] { visibility: hidden !important; }
     `;
     document.head.appendChild(style);
 
@@ -105,14 +105,21 @@ export const MfaVerificationModal = () => {
     };
   }, [showModal]);
 
-  // Intercept focusin in capture phase to prevent Radix FocusTrap
-  // from stealing focus away from our modal input
+  // Fight Radix FocusTrap: intercept focus events and force focus back
+  // to our modal when FocusTrap tries to steal it
   useEffect(() => {
     if (!showModal) return;
 
     const handleFocusIn = (e: FocusEvent) => {
-      if (modalRef.current && modalRef.current.contains(e.target as Node)) {
+      if (!modalRef.current) return;
+      if (modalRef.current.contains(e.target as Node)) {
+        // Focus is inside our modal - block FocusTrap from seeing it
         e.stopImmediatePropagation();
+      } else {
+        // FocusTrap stole focus outside our modal - take it back
+        e.stopImmediatePropagation();
+        const input = modalRef.current.querySelector('input');
+        if (input) requestAnimationFrame(() => input.focus());
       }
     };
 
