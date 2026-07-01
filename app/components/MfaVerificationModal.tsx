@@ -126,6 +126,10 @@ export const MfaVerificationModal = () => {
         const newCode = codeRef.current + e.key;
         codeRef.current = newCode;
         setCode(newCode);
+        // Auto-submit when 6 digits are entered
+        if (newCode.length === 6) {
+          setTimeout(() => handleSubmit(), 150);
+        }
       } else if (e.key === 'Backspace') {
         e.preventDefault();
         e.stopImmediatePropagation();
@@ -223,7 +227,7 @@ export const MfaVerificationModal = () => {
         )}
         <div style={{ display: 'flex', gap: '12px' }}>
           <button
-            onClick={handleCancel}
+            onMouseDown={(e) => { e.stopPropagation(); handleCancel(); }}
             style={{
               flex: 1,
               padding: '10px',
@@ -239,7 +243,7 @@ export const MfaVerificationModal = () => {
             Cancel
           </button>
           <button
-            onClick={handleSubmit}
+            onMouseDown={(e) => { e.stopPropagation(); if (code.length === 6 && !submitting) handleSubmit(); }}
             disabled={code.length !== 6 || submitting}
             style={{
               flex: 1,
