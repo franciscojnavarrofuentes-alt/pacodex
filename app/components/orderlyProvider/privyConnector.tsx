@@ -11,17 +11,29 @@ import { getRuntimeConfig, getRuntimeConfigBoolean } from '@/utils/runtime-confi
 // This observer removes inert from Privy's modal container when detected.
 function usePrivyFocusTrapFix() {
   useEffect(() => {
+    // 1. Remove inert attributes that block Privy's modal
     const observer = new MutationObserver(() => {
-      // Privy renders its MFA modal in an iframe from auth.privy.io
       const privyIframe = document.querySelector('iframe[src*="privy.io"]');
       if (!privyIframe) return;
-      // Remove inert from all elements so Privy's iframe can receive focus
       document.querySelectorAll('[inert]').forEach((el) => {
         el.removeAttribute('inert');
       });
     });
     observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['inert'] });
-    return () => observer.disconnect();
+
+    // 2. Prevent Radix FocusTrap from stealing focus back from Privy's iframe
+    const handleFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target instanceof HTMLIFrameElement && target.src?.includes('privy.io')) {
+        e.stopImmediatePropagation();
+      }
+    };
+    document.addEventListener('focusin', handleFocusIn, true);
+
+    return () => {
+      observer.disconnect();
+      document.removeEventListener('focusin', handleFocusIn, true);
+    };
   }, []);
 }
 
