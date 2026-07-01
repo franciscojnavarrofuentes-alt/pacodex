@@ -83,13 +83,24 @@ export const MfaVerificationModal = () => {
     `;
     document.head.appendChild(style);
 
-    // Set inert on all Radix portals to fully disable FocusTrap
-    const portals = document.querySelectorAll('[data-radix-portal]');
-    portals.forEach((el) => el.setAttribute('inert', ''));
+    // Set inert on all existing Radix portals and dialogs
+    const setInertOnAll = () => {
+      document.querySelectorAll('[data-radix-portal], [role="dialog"]').forEach((el) => {
+        if (!el.hasAttribute('inert')) el.setAttribute('inert', '');
+      });
+    };
+    setInertOnAll();
+
+    // Watch for new portals/dialogs that appear while MFA modal is open
+    const observer = new MutationObserver(() => setInertOnAll());
+    observer.observe(document.body, { childList: true, subtree: true });
 
     return () => {
+      observer.disconnect();
       style.remove();
-      portals.forEach((el) => el.removeAttribute('inert'));
+      document.querySelectorAll('[data-radix-portal], [role="dialog"]').forEach((el) => {
+        el.removeAttribute('inert');
+      });
     };
   }, [showModal]);
 
