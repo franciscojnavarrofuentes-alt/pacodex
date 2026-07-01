@@ -17,8 +17,8 @@ export const MfaVerificationModal = () => {
   const { init, submit, cancel } = useMfa();
 
   useRegisterMfaListener({
-    onMfaRequired: async ({ mfaMethods }) => {
-      if (mfaMethods.includes('totp')) {
+    onMfaRequired: async (methods) => {
+      if (methods.includes('totp')) {
         setShowModal(true);
         setCode('');
         setError(null);
@@ -62,6 +62,21 @@ export const MfaVerificationModal = () => {
     setCode('');
     setError(null);
   }, [cancel]);
+
+  // Hide Privy's native dialog when our MFA modal is shown
+  useEffect(() => {
+    if (!showModal) return;
+    const style = document.createElement('style');
+    style.setAttribute('data-mfa-override', 'true');
+    style.textContent = `
+      dialog[open] { display: none !important; }
+      [data-privy-dialog] { display: none !important; }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      style.remove();
+    };
+  }, [showModal]);
 
   // Submit on Enter key
   useEffect(() => {
