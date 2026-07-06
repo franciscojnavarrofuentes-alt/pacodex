@@ -1,5 +1,6 @@
 import { useFundWallet, useWallets, useMfaEnrollment, usePrivy } from '@privy-io/react-auth';
 import { useCallback, useState, useRef, useEffect } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { ConvertUsdcToEth } from './ConvertUsdcToEth';
 import { SendFunds } from './SendFunds';
 
@@ -413,8 +414,15 @@ export const FundWalletButton = ({ dropUp = false }: { dropUp?: boolean }) => {
               </div>
             ) : (
               <div>
+                {mfaAuthUrl && (
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+                    <div style={{ background: 'white', padding: '12px', borderRadius: '8px' }}>
+                      <QRCodeSVG value={mfaAuthUrl} size={160} />
+                    </div>
+                  </div>
+                )}
                 <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', margin: '0 0 12px' }}>
-                  Open your authenticator app and add this key manually:
+                  Scan the QR code with your authenticator app, or add this key manually:
                 </p>
                 <div
                   style={{
