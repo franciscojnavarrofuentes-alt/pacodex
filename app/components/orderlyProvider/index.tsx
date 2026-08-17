@@ -1,5 +1,7 @@
 import { ReactNode, useCallback, lazy, Suspense } from "react";
 import { OrderlyAppProvider } from "@orderly.network/react-app";
+import { registerStarchildPlugin } from "starchild-orderly-plugin";
+import "starchild-orderly-plugin/styles.css";
 import { useOrderlyConfig } from "@/utils/config";
 import type { NetworkId } from "@orderly.network/types";
 import { LocaleProvider, LocaleCode, LocaleEnum, defaultLanguages } from "@orderly.network/i18n";
@@ -170,6 +172,7 @@ const OrderlyProvider = (props: { children: ReactNode }) => {
 			restrictedInfo={{
 				customRestrictedRegions: getRuntimeConfigArray('VITE_RESTRICTED_REGIONS'),
 			}}
+			plugins={[registerStarchildPlugin()]}
 		>
 			<DemoGraduationChecker />
 			<ServiceDisclaimerDialog />

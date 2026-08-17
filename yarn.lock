@@ -14163,6 +14163,11 @@ stack-trace@0.0.x:
   resolved "https://registry.npmjs.org/stack-trace/-/stack-trace-0.0.10.tgz"
   integrity sha512-KGzahc7puUKkzyMt+IqAep+TVNbKP+k2Lmwhub39m1AsTSkaDutx56aDCo+HLDzf/D26BIHTJWNiTG1KAJiQCg==
 
+starchild-orderly-plugin@^1.2.3:
+  version "1.2.3"
+  resolved "https://registry.yarnpkg.com/starchild-orderly-plugin/-/starchild-orderly-plugin-1.2.3.tgz#5d9f7eaf7b3678e985b5fdc3e040fd8af7d95c02"
+  integrity sha512-DcYpCIuCaKJcx5CCgwLNu4JM7gV1ZwBBKs6JdFDF2+iFYa3JrGHtZfozIbjeJZLGX6JgAQqkz9xLRu9q1XYrlw==
+
 statuses@2.0.1:
   version "2.0.1"
   resolved "https://registry.npmjs.org/statuses/-/statuses-2.0.1.tgz"
