@@ -1,7 +1,12 @@
-import { ReactNode, useCallback, lazy, Suspense } from "react";
+import { ReactNode, useCallback, lazy, Suspense, useMemo } from "react";
 import { OrderlyAppProvider } from "@orderly.network/react-app";
 import { registerStarchildPlugin } from "starchild-orderly-plugin";
 import "starchild-orderly-plugin/styles.css";
+import {
+	StarchildCredentialsBridge,
+	createGetOrderlyCredentials,
+	useStarchildBridgeRef,
+} from "./starchildCredentials";
 import { useOrderlyConfig } from "@/utils/config";
 import type { NetworkId } from "@orderly.network/types";
 import { LocaleProvider, LocaleCode, LocaleEnum, defaultLanguages } from "@orderly.network/i18n";
@@ -108,6 +113,12 @@ const OrderlyProvider = (props: { children: ReactNode }) => {
 
 	const dataAdapter = createSymbolDataAdapter();
 
+	const starchildBridgeRef = useStarchildBridgeRef();
+	const getOrderlyCredentials = useMemo(
+		() => createGetOrderlyCredentials(starchildBridgeRef, networkId),
+		[starchildBridgeRef, networkId]
+	);
+
 	const onChainChanged = useCallback(
 		(_chainId: number, {isTestnet}: {isTestnet: boolean}) => {
 			const currentNetworkId = getNetworkId();
@@ -172,8 +183,9 @@ const OrderlyProvider = (props: { children: ReactNode }) => {
 			restrictedInfo={{
 				customRestrictedRegions: getRuntimeConfigArray('VITE_RESTRICTED_REGIONS'),
 			}}
-			plugins={[registerStarchildPlugin()]}
+			plugins={[registerStarchildPlugin({ getOrderlyCredentials })]}
 		>
+			<StarchildCredentialsBridge bridgeRef={starchildBridgeRef} />
 			<DemoGraduationChecker />
 			<ServiceDisclaimerDialog />
 			{props.children}
