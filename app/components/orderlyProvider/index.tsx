@@ -119,6 +119,13 @@ const OrderlyProvider = (props: { children: ReactNode }) => {
 		[starchildBridgeRef, networkId]
 	);
 
+	// The Starchild panel is a cross-origin iframe, so it needs an absolute,
+	// publicly reachable logo URL rather than a path relative to this app.
+	const siteUrl = getRuntimeConfig('VITE_SEO_SITE_URL');
+	const starchildLogoUrl = siteUrl
+		? `${siteUrl.replace(/\/$/, '')}${withBasePath('/logo.webp')}`
+		: undefined;
+
 	const onChainChanged = useCallback(
 		(_chainId: number, {isTestnet}: {isTestnet: boolean}) => {
 			const currentNetworkId = getNetworkId();
@@ -183,7 +190,7 @@ const OrderlyProvider = (props: { children: ReactNode }) => {
 			restrictedInfo={{
 				customRestrictedRegions: getRuntimeConfigArray('VITE_RESTRICTED_REGIONS'),
 			}}
-			plugins={[registerStarchildPlugin({ getOrderlyCredentials })]}
+			plugins={[registerStarchildPlugin({ getOrderlyCredentials, logoUrl: starchildLogoUrl })]}
 		>
 			<StarchildCredentialsBridge bridgeRef={starchildBridgeRef} />
 			<DemoGraduationChecker />
